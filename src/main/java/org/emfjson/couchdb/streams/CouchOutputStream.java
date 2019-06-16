@@ -8,6 +8,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.URIConverter.Saveable;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.emfjson.couchdb.CouchHandler;
 import org.emfjson.couchdb.client.CouchClient;
 import org.emfjson.couchdb.client.CouchDocument;
 import org.emfjson.couchdb.client.DB;
@@ -52,18 +53,12 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 		else {
 			status = doc.create(toJson(resource));
 		}
-
-		if (status != null) {
-			if (status.has("error")) {
-				String message = status.get("error").asText() + ": " + status.get("reason").asText();
-				throw new IOException(message);
-			}
-			if (status.has("ok") && status.get("ok").asBoolean()) {
-				String id = status.get("id").asText();
-				String rev = status.get("rev").asText();
-				URI newURI = resource.getURI().trimQuery().trimFragment().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
-				resource.setURI(newURI);
-			}
+		CouchHandler.checkStatus(status);
+		if (status.has("ok") && status.get("ok").asBoolean()) {
+			String id = status.get("id").asText();
+			String rev = status.get("rev").asText();
+			URI newURI = resource.getURI().trimQuery().trimFragment().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
+			resource.setURI(newURI);
 		}
 	}
 
@@ -76,7 +71,14 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 		final ObjectMapper mapper = new ObjectMapper();
 		mapper.registerModule(new EMFModule(resourceSet, JacksonOptions.from(options)));
 
+		final ObjectNode resourceNode = documentFromURI(uri, mapper);
 		final JsonNode contents = mapper.valueToTree(resource);
+		resourceNode.set("contents", contents);
+
+		return resourceNode;
+	}
+
+	public static ObjectNode documentFromURI(URI uri, ObjectMapper mapper) {
 		final ObjectNode resourceNode = mapper.createObjectNode();
 		final String id = uri.segment(1);
 		if (!id.isEmpty()) {
@@ -86,9 +88,6 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 		if (query != null && query.startsWith("rev=")) {
 			resourceNode.put("_rev", query.substring(4));
 		}
-		resourceNode.set("contents", contents);
-
 		return resourceNode;
 	}
-
 }

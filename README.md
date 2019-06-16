@@ -2,7 +2,8 @@ arch7tect:
 - basic authentication
 - saving resource with empty docId(=="") now creates new document with server generated id
 - saving resource with revision now creates "_rev" field in document to avoid conflicts
-
+- handle resource deletion
+- pass mapper, username, password to CoachHandler (optionally)
 
 # CouchDB Adapter for EMF (Eclipse Modeling Framework)
 

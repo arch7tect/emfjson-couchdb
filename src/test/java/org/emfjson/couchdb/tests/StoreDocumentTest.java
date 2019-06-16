@@ -94,7 +94,7 @@ public class StoreDocumentTest extends CouchTestSupport {
 	}
 
 	@Test
-	public void testStoreDocumentWithoutName() throws IOException {
+	public void testStoreUpdateDeleteDocumentWithoutName() throws IOException {
 		Resource resource = resourceSet.createResource(baseURI.appendSegment(""));
 
 		TestA a1 = ModelFactory.eINSTANCE.createTestA();
@@ -105,6 +105,8 @@ public class StoreDocumentTest extends CouchTestSupport {
 
 		a1.setStringValue("a2");
 		resource.save(null);
+
+		resource.delete(null);
 	}
 
 }

@@ -37,7 +37,6 @@ public class CouchDocument {
 	 *
 	 * @return JsonNode
 	 * @throws IOException
-	 * @throws HTTPException
 	 */
 	public JsonNode content() throws IOException {
 		return client.content(db.getName() + "/" + docName);
