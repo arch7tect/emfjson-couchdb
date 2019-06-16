@@ -2,8 +2,6 @@ package org.emfjson.couchdb.client;
 
 import java.io.IOException;
 
-import javax.xml.ws.http.HTTPException;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -62,6 +60,18 @@ public class CouchDocument {
 	}
 
 	/**
+	 * Creates New document from a JsonNode object in the CouchDB instance.
+	 *
+	 * @param data
+	 * @return JsonNode
+	 * @throws JsonProcessingException
+	 * @throws IOException
+	 */
+	public JsonNode createNew(JsonNode data) throws IOException {
+		return createNew(client.mapper.writeValueAsString(data));
+	}
+
+	/**
 	 * Creates a document from a String in the CouchDB instance.
 	 *
 	 * @param data
@@ -71,6 +81,18 @@ public class CouchDocument {
 	 */
 	public JsonNode create(String data) throws IOException {
 		return client.put(db.getName() + "/" + docName, data);
+	}
+
+	/**
+	 * Creates New a document from a String in the CouchDB instance.
+	 *
+	 * @param data
+	 * @return JsonNode
+	 * @throws JsonProcessingException
+	 * @throws IOException
+	 */
+	public JsonNode createNew(String data) throws IOException {
+		return client.post(db.getName() + "/" + docName, data);
 	}
 
 	/**

@@ -6,175 +6,212 @@ import java.net.URL;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Simple client for CouchDB.
- *
  */
 public class CouchClient {
 
-	public final ObjectMapper mapper;
+    public final ObjectMapper mapper;
 
-	public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-	private final OkHttpClient client = new OkHttpClient();
+    private OkHttpClient client;
 
-	private final URL baseURL;
+    private final URL baseURL;
+    private String user = "admin";
+    private String password = "admin";
 
-	private static URL getDefault() {
-		URL defaultURL = null;
-		try {
-			defaultURL = new URL("http://127.0.0.1:5984/");
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		return defaultURL;
-	}
+    private OkHttpClient getClient() {
+        if (client == null) {
+            OkHttpClient.Builder builder = new OkHttpClient.Builder();
+            if (user != null && password != null) {
+                final String credential = Credentials.basic(user, password);
+                builder.addInterceptor(new Interceptor() {
+                    @NotNull
+                    @Override
+                    public Response intercept(@NotNull Chain chain) throws IOException {
+                        Request request = chain.request();
+                        Request newRequest;
 
-	public CouchClient(URL baseURL, ObjectMapper mapper) {
-		this.baseURL = baseURL == null ? getDefault() : baseURL;
-		this.mapper = mapper == null ? new ObjectMapper() : mapper;
-	}
+                        newRequest = request.newBuilder()
+                                .addHeader("Authorization", credential)
+                                .build();
+                        return chain.proceed(newRequest);
+                    }
+                });
+            }
+            client = builder.build();
+        }
+        return client;
+    }
 
-	public CouchClient(URL baseURL) {
-		this(baseURL, new ObjectMapper());
-	}
+    private static URL getDefault() {
+        URL defaultURL = null;
+        try {
+            defaultURL = new URL("http://127.0.0.1:5984/");
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return defaultURL;
+    }
 
-	public CouchClient() {
-		this(getDefault(), new ObjectMapper());
-	}
+    public CouchClient(URL baseURL, ObjectMapper mapper, String user, String password) {
+        this(baseURL, mapper);
+        this.user = user;
+        this.password = password;
+    }
 
-	/**
-	 * Returns the CouchDB instance URL.
-	 * 
-	 * @return URL
-	 */
-	public URL url() {
-		return baseURL;
-	}
+    public CouchClient(URL baseURL, ObjectMapper mapper) {
+        this.baseURL = baseURL == null ? getDefault() : baseURL;
+        this.mapper = mapper == null ? new ObjectMapper() : mapper;
+    }
 
-	/**
-	 * Returns true if the connection to a CouchDB instance is established.
-	 * 
-	 * @return {@link Boolean}
-	 * @throws IOException
-	 */
-	public boolean isConnected() throws IOException {
-		Request request = new Request.Builder()
-			.url(baseURL)
-			.get()
-			.build();
+    public CouchClient(URL baseURL) {
+        this(baseURL, new ObjectMapper());
+    }
 
-		Response response = client.newCall(request).execute();
+    public CouchClient() {
+        this(getDefault(), new ObjectMapper());
+    }
 
-		return mapper.readTree(response.body().bytes()).has("couchdb");
-	}
+    /**
+     * Returns the CouchDB instance URL.
+     *
+     * @return URL
+     */
+    public URL url() {
+        return baseURL;
+    }
 
-	/**
-	 * Returns list of all of the databases in a CouchDB instance.
-	 * 
-	 * @return {@link JsonNode}
-	 * @throws IOException
-	 */
-	public JsonNode dbs() throws IOException {
-		Request request = new Request.Builder()
-			.url(baseURL.toString() + Constants._all_dbs)
-			.get()
-			.build();
+    /**
+     * Returns true if the connection to a CouchDB instance is established.
+     *
+     * @return {@link Boolean}
+     * @throws IOException
+     */
+    public boolean isConnected() throws IOException {
+        Request request = new Request.Builder()
+                .url(baseURL)
+                .get()
+                .build();
 
-		return callAsJson(request);
-	}
+        Response response = getClient().newCall(request).execute();
 
-	/**
-	 * Returns database information.
-	 * 
-	 * @param dbName
-	 * @return {@link DB}
-	 * @throws IllegalArgumentException if db name is null
-	 */
-	public DB db(String dbName) {
-		if (dbName == null) throw new IllegalArgumentException("Db name is null");
+        return mapper.readTree(response.body().bytes()).has("couchdb");
+    }
 
-		return new DB(this, dbName);
-	}
-	
-	/**
-	 * Returns true if the CouchDB instance has this database.
-	 * 
-	 * @param dbName
-	 * @return {@link Boolean}
-	 * @throws IOException 
-	 */
-	public boolean hasDatabase(String dbName) throws IOException {
-		Request request = new Request.Builder()
-			.url(baseURL.toString() + dbName)
-			.get()
-			.build();
+    /**
+     * Returns list of all of the databases in a CouchDB instance.
+     *
+     * @return {@link JsonNode}
+     * @throws IOException
+     */
+    public JsonNode dbs() throws IOException {
+        Request request = new Request.Builder()
+                .url(baseURL.toString() + Constants._all_dbs)
+                .get()
+                .build();
 
-		JsonNode node = callAsJson(request);
+        return callAsJson(request);
+    }
 
-		return node != null && node.has("db_name");
-	}
+    /**
+     * Returns database information.
+     *
+     * @param dbName
+     * @return {@link DB}
+     * @throws IllegalArgumentException if db name is null
+     */
+    public DB db(String dbName) {
+        if (dbName == null) throw new IllegalArgumentException("Db name is null");
 
-	JsonNode json(String value) throws IOException {
-		return value == null ? null : mapper.readTree(value);
-	}
+        return new DB(this, dbName);
+    }
 
-	public JsonNode content(String path) throws IOException {
-		Request request = new Request.Builder()
-			.url(baseURL.toString() + path)
-			.get()
-			.build();
+    /**
+     * Returns true if the CouchDB instance has this database.
+     *
+     * @param dbName
+     * @return {@link Boolean}
+     * @throws IOException
+     */
+    public boolean hasDatabase(String dbName) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseURL.toString() + dbName)
+                .get()
+                .build();
 
-		return callAsJson(request);
-	}
+        JsonNode node = callAsJson(request);
 
-	public byte[] contentAsBytes(String path) throws IOException {
-		Request request = new Request.Builder()
-				.url(baseURL.toString() + path)
-				.get()
-				.build();
+        return node != null && node.has("db_name");
+    }
 
-		return callAsBytes(request);
-	}
+    JsonNode json(String value) throws IOException {
+        return value == null ? null : mapper.readTree(value);
+    }
 
-	public JsonNode put(String path, String data) throws IOException {
-		Request request = new Request.Builder()
-			.url(baseURL.toString() + path)
-			.put(RequestBody.create(JSON, data))
-			.build();
+    public JsonNode content(String path) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseURL.toString() + path)
+                .get()
+                .build();
 
-		return callAsJson(request);
-	}
+        return callAsJson(request);
+    }
 
-	public JsonNode delete(String path) throws IOException {
-		Request request = new Request.Builder()
-			.url(baseURL.toString() + path)
-			.delete()
-			.build();
+    public byte[] contentAsBytes(String path) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseURL.toString() + path)
+                .get()
+                .build();
 
-		return callAsJson(request);
-	}
+        return callAsBytes(request);
+    }
 
-	private JsonNode callAsJson(Request request) throws IOException {
-		Response response = client.newCall(request).execute();
-		if (response != null) {
-			return json(response.body().string());
-		}
-		return null;
-	}
+    public JsonNode put(String path, String data) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseURL.toString() + path)
+                .put(RequestBody.create(JSON, data))
+                .build();
 
-	private byte[] callAsBytes(Request request) throws IOException {
-		Response response = client.newCall(request).execute();
-		if (response != null) {
-			return response.body().bytes();
-		}
-		return null;
-	}
+        return callAsJson(request);
+    }
+
+    public JsonNode post(String path, String data) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseURL.toString() + path)
+                .post(RequestBody.create(JSON, data))
+                .build();
+
+        return callAsJson(request);
+    }
+
+    public JsonNode delete(String path) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseURL.toString() + path)
+                .delete()
+                .build();
+
+        return callAsJson(request);
+    }
+
+    private JsonNode callAsJson(Request request) throws IOException {
+        Response response = getClient().newCall(request).execute();
+        if (response != null) {
+            return json(response.body().string());
+        }
+        return null;
+    }
+
+    private byte[] callAsBytes(Request request) throws IOException {
+        Response response = getClient().newCall(request).execute();
+        if (response != null) {
+            return response.body().bytes();
+        }
+        return null;
+    }
 
 }

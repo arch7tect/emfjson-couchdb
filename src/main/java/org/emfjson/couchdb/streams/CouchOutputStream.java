@@ -41,16 +41,27 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 		}
 
 		if (docName == null) {
-			throw new IOException("Cannot load undefined document");
+			throw new IOException("Cannot save undefined document");
 		}
 
 		final CouchDocument doc = db.doc(docName);
-		final JsonNode status = doc.create(toJson(resource));
+		final JsonNode status;
+		if (docName.isEmpty()) {
+			status = doc.createNew(toJson(resource));
+		}
+		else {
+			status = doc.create(toJson(resource));
+		}
 
-		if (status != null && status.has("ok")) {
-			if (status.get("ok").asBoolean()) {
+		if (status != null) {
+			if (status.has("error")) {
+				String message = status.get("error").asText() + ": " + status.get("reason");
+				throw new IOException(message);
+			}
+			if (status.has("ok") && status.get("ok").asBoolean()) {
+				String id = status.get("id").asText();
 				String rev = status.get("rev").asText();
-				URI newURI = resource.getURI().appendQuery("rev=" + rev);
+				URI newURI = resource.getURI().trimQuery().trimFragment().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
 				resource.setURI(newURI);
 			}
 		}
@@ -68,8 +79,13 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 		final JsonNode contents = mapper.valueToTree(resource);
 		final ObjectNode resourceNode = mapper.createObjectNode();
 		final String id = uri.segment(1);
-
-		resourceNode.put("_id", id);
+		if (!id.isEmpty()) {
+			resourceNode.put("_id", id);
+		}
+		final String query = uri.query();
+		if (query != null && query.startsWith("rev=")) {
+			resourceNode.put("_rev", query.substring(4));
+		}
 		resourceNode.set("contents", contents);
 
 		return resourceNode;

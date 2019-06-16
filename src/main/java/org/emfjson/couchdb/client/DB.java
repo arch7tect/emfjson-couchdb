@@ -3,7 +3,6 @@ package org.emfjson.couchdb.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javax.xml.ws.http.HTTPException;
 import java.io.IOException;
 
 public class DB {
