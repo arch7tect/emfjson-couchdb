@@ -55,14 +55,14 @@ public class CouchHandler extends URIHandlerImpl {
 	public InputStream createInputStream(URI uri, Map<?, ?> options) throws IOException {
 		final CouchClient client = getClient(uri);
 
-		return new CouchInputStream(client, uri, options);
+		return new CouchInputStream(client, uri, options, mapper);
 	}
 
 	@Override
 	public OutputStream createOutputStream(URI uri, Map<?, ?> options) throws IOException {
 		final CouchClient client = getClient(uri);
 
-		return new CouchOutputStream(client, uri, options);
+		return new CouchOutputStream(client, uri, options, mapper);
 	}
 
 	public void delete(URI uri, Map<?, ?> options) throws IOException {

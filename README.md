@@ -4,6 +4,7 @@ arch7tect:
 - saving resource with revision now creates "_rev" field in document to avoid conflicts
 - handle resource deletion
 - pass mapper, username, password to CoachHandler (optionally)
+- set rev after load
 
 # CouchDB Adapter for EMF (Eclipse Modeling Framework)
 

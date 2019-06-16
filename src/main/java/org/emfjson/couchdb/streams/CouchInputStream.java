@@ -23,11 +23,13 @@ public class CouchInputStream extends InputStream implements Loadable {
 	private final URI uri;
 	private final Map<?, ?> options;
 	private final CouchClient client;
+	private final ObjectMapper mapper;
 
-	public CouchInputStream(CouchClient client, URI uri, Map<?, ?> options) {
+	public CouchInputStream(CouchClient client, URI uri, Map<?, ?> options, ObjectMapper mapper) {
 		this.client = client;
 		this.uri = uri;
 		this.options = options;
+		this.mapper = mapper;
 	}
 
 	@Override
@@ -63,29 +65,38 @@ public class CouchInputStream extends InputStream implements Loadable {
 			resourceSet = new ResourceSetImpl();
 		}
 
-		final ObjectMapper mapper = new ObjectMapper();
-		final JacksonOptions jacksonOptions = new JacksonOptions
-				.Builder()
-				.build(options);
+		ObjectMapper objectMapper = mapper;
+		if (objectMapper == null) {
+			objectMapper = new ObjectMapper();
+			final JacksonOptions jacksonOptions = new JacksonOptions
+					.Builder()
+					.build(options);
 
-		final EMFModule module = new EMFModule(resourceSet, jacksonOptions);
-		mapper.registerModule(module);
+			final EMFModule module = new EMFModule(resourceSet, jacksonOptions);
+			objectMapper.registerModule(module);
+		}
 
 		final ContextAttributes attributes = ContextAttributes
 				.getEmpty()
 				.withSharedAttribute("resourceSet", resourceSet)
 				.withSharedAttribute("resource", resource);
 
-		final JsonNode rootNode = mapper.readTree(data);
+		final JsonNode rootNode = objectMapper.readTree(data);
 		final JsonNode contents = rootNode.has("contents") ?
 				rootNode.get("contents"):
 				null;
 
 		if (contents != null) {
-			mapper.reader()
+			objectMapper.reader()
 					.with(attributes)
 					.withValueToUpdate(resource)
 					.treeToValue(contents, Resource.class);
+			if (rootNode.has("id") && rootNode.has("rev")) {
+				String id = rootNode.get("id").asText();
+				String rev = rootNode.get("rev").asText();
+				URI newURI = resource.getURI().trimFragment().trimQuery().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
+				resource.setURI(newURI);
+			}
 		}
 	}
 

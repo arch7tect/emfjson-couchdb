@@ -24,11 +24,13 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 	private final URI uri;
 	private final Map<?, ?> options;
 	private final CouchClient client;
+	private final ObjectMapper mapper;
 
-	public CouchOutputStream(CouchClient client, URI uri, Map<?, ?> options) {
+	public CouchOutputStream(CouchClient client, URI uri, Map<?, ?> options, ObjectMapper mapper) {
 		this.client = client;
 		this.uri = uri;
 		this.options = options;
+		this.mapper = mapper;
 	}
 
 	@Override
@@ -57,7 +59,7 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 		if (status.has("ok") && status.get("ok").asBoolean()) {
 			String id = status.get("id").asText();
 			String rev = status.get("rev").asText();
-			URI newURI = resource.getURI().trimQuery().trimFragment().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
+			URI newURI = resource.getURI().trimFragment().trimQuery().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
 			resource.setURI(newURI);
 		}
 	}
@@ -68,11 +70,13 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 			resourceSet = new ResourceSetImpl();
 		}
 
-		final ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new EMFModule(resourceSet, JacksonOptions.from(options)));
-
-		final ObjectNode resourceNode = documentFromURI(uri, mapper);
-		final JsonNode contents = mapper.valueToTree(resource);
+		ObjectMapper objectMapper = mapper;
+		if (objectMapper == null) {
+			objectMapper = new ObjectMapper();
+			objectMapper.registerModule(new EMFModule(resourceSet, JacksonOptions.from(options)));
+		}
+		final ObjectNode resourceNode = documentFromURI(uri, objectMapper);
+		final JsonNode contents = objectMapper.valueToTree(resource);
 		resourceNode.set("contents", contents);
 
 		return resourceNode;
