@@ -55,7 +55,7 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 
 		if (status != null) {
 			if (status.has("error")) {
-				String message = status.get("error").asText() + ": " + status.get("reason");
+				String message = status.get("error").asText() + ": " + status.get("reason").asText();
 				throw new IOException(message);
 			}
 			if (status.has("ok") && status.get("ok").asBoolean()) {

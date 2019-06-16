@@ -7,7 +7,6 @@ import java.net.URL;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Simple client for CouchDB.
@@ -30,9 +29,8 @@ public class CouchClient {
             if (user != null && password != null) {
                 final String credential = Credentials.basic(user, password);
                 builder.addInterceptor(new Interceptor() {
-                    @NotNull
                     @Override
-                    public Response intercept(@NotNull Chain chain) throws IOException {
+                    public Response intercept(Chain chain) throws IOException {
                         Request request = chain.request();
                         Request newRequest;
 
