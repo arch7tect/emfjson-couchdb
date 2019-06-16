@@ -1,3 +1,9 @@
+arch7tect:
+- basic authentication
+- saving resource with empty docId(=="") now creates new document with server generated id
+- saving resource with revision now creates "_rev" field in document to avoid conflicts
+
+
 # CouchDB Adapter for EMF (Eclipse Modeling Framework)
 
 [![Build Status](https://secure.travis-ci.org/emfjson/emfjson-couchdb.png)](http://travis-ci.org/emfjson/emfjson-couchdb)
