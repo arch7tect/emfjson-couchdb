@@ -91,9 +91,9 @@ public class CouchInputStream extends InputStream implements Loadable {
 					.with(attributes)
 					.withValueToUpdate(resource)
 					.treeToValue(contents, Resource.class);
-			if (rootNode.has("id") && rootNode.has("rev")) {
-				String id = rootNode.get("id").asText();
-				String rev = rootNode.get("rev").asText();
+			if (rootNode.has("_id") && rootNode.has("_rev")) {
+				String id = rootNode.get("_id").asText();
+				String rev = rootNode.get("_rev").asText();
 				URI newURI = resource.getURI().trimFragment().trimQuery().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
 				resource.setURI(newURI);
 			}
