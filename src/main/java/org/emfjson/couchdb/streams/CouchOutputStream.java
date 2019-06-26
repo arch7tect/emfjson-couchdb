@@ -12,8 +12,8 @@ import org.emfjson.couchdb.CouchHandler;
 import org.emfjson.couchdb.client.CouchClient;
 import org.emfjson.couchdb.client.CouchDocument;
 import org.emfjson.couchdb.client.DB;
-import org.emfjson.jackson.JacksonOptions;
 import org.emfjson.jackson.module.EMFModule;
+import org.emfjson.jackson.resource.JsonResource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -61,6 +61,9 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 			String rev = status.get("rev").asText();
 			URI newURI = resource.getURI().trimFragment().trimQuery().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
 			resource.setURI(newURI);
+			if (resource instanceof JsonResource && resource.getContents().size() == 1) {
+				((JsonResource) resource).setID(resource.getContents().get(0), id);
+			}
 		}
 	}
 
@@ -73,9 +76,13 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 		ObjectMapper objectMapper = mapper;
 		if (objectMapper == null) {
 			objectMapper = new ObjectMapper();
-			objectMapper.registerModule(new EMFModule(resourceSet, JacksonOptions.from(options)));
+			objectMapper.registerModule(new EMFModule());
 		}
 		final ObjectNode resourceNode = documentFromURI(uri, objectMapper);
+		JsonNode id = resourceNode.get("_id");
+		if (id != null && resource instanceof JsonResource && resource.getContents().size() == 1) {
+			((JsonResource) resource).setID(resource.getContents().get(0), id.textValue());
+		}
 		final JsonNode contents = objectMapper.valueToTree(resource);
 		resourceNode.set("contents", contents);
 

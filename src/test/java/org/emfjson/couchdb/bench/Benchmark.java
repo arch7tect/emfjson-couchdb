@@ -5,7 +5,6 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.emfjson.EMFJs;
 import org.emfjson.couchdb.CouchHandler;
 import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.model.ModelFactory;
@@ -57,9 +56,6 @@ public class Benchmark {
 	public static void main(String[] args) {
 		long sum = 0;
 		Map<String, Object> options = new HashMap<>();
-		options.put(EMFJs.OPTION_INDENT_OUTPUT, false);
-		options.put(EMFJs.OPTION_SERIALIZE_REF_TYPE, false);
-		options.put(EMFJs.OPTION_SERIALIZE_TYPE, false);
 
 		for (int i = 0; i < times; i++) {
 			ResourceSet resourceSet = new ResourceSetImpl();

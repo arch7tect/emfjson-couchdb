@@ -11,12 +11,14 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.emfjson.couchdb.client.CouchClient;
 import org.emfjson.couchdb.client.CouchDocument;
 import org.emfjson.couchdb.client.DB;
-import org.emfjson.jackson.JacksonOptions;
 import org.emfjson.jackson.module.EMFModule;
+import org.emfjson.jackson.resource.JsonResource;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+
+import static org.emfjson.jackson.databind.EMFContext.Attributes.RESOURCE;
 
 public class CouchInputStream extends InputStream implements Loadable {
 
@@ -68,11 +70,7 @@ public class CouchInputStream extends InputStream implements Loadable {
 		ObjectMapper objectMapper = mapper;
 		if (objectMapper == null) {
 			objectMapper = new ObjectMapper();
-			final JacksonOptions jacksonOptions = new JacksonOptions
-					.Builder()
-					.build(options);
-
-			final EMFModule module = new EMFModule(resourceSet, jacksonOptions);
+			final EMFModule module = new EMFModule();
 			objectMapper.registerModule(module);
 		}
 
@@ -97,6 +95,9 @@ public class CouchInputStream extends InputStream implements Loadable {
 			String rev = rootNode.get("_rev").asText();
 			URI newURI = resource.getURI().trimFragment().trimQuery().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
 			resource.setURI(newURI);
+			if (resource instanceof JsonResource && resource.getContents().size() == 1) {
+				((JsonResource) resource).setID(resource.getContents().get(0), id);
+			}
 		}
 	}
 
