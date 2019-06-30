@@ -80,9 +80,9 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 		}
 		final ObjectNode resourceNode = documentFromURI(uri, objectMapper);
 		JsonNode id = resourceNode.get("_id");
-		if (id != null && resource instanceof JsonResource && resource.getContents().size() == 1) {
-			((JsonResource) resource).setID(resource.getContents().get(0), id.textValue());
-		}
+		//if (id != null && resource instanceof JsonResource && resource.getContents().size() == 1) {
+		//	((JsonResource) resource).setID(resource.getContents().get(0), id.textValue());
+		//}
 		final JsonNode contents = objectMapper.valueToTree(resource);
 		resourceNode.set("contents", contents);
 

@@ -95,9 +95,9 @@ public class CouchInputStream extends InputStream implements Loadable {
 			String rev = rootNode.get("_rev").asText();
 			URI newURI = resource.getURI().trimFragment().trimQuery().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
 			resource.setURI(newURI);
-			if (resource instanceof JsonResource && resource.getContents().size() == 1) {
-				((JsonResource) resource).setID(resource.getContents().get(0), id);
-			}
+			//if (resource instanceof JsonResource && resource.getContents().size() == 1) {
+			//	((JsonResource) resource).setID(resource.getContents().get(0), id);
+			//}
 		}
 	}
 
