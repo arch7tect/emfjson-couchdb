@@ -61,9 +61,9 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 			String rev = status.get("rev").asText();
 			URI newURI = resource.getURI().trimFragment().trimQuery().trimSegments(1).appendSegment(id).appendQuery("rev=" + rev);
 			resource.setURI(newURI);
-			if (resource instanceof JsonResource && resource.getContents().size() == 1) {
-				((JsonResource) resource).setID(resource.getContents().get(0), id);
-			}
+			//if (resource instanceof JsonResource && resource.getContents().size() == 1) {
+			//	((JsonResource) resource).setID(resource.getContents().get(0), id);
+			//}
 		}
 	}
 
@@ -79,7 +79,7 @@ public class CouchOutputStream extends ByteArrayOutputStream implements Saveable
 			objectMapper.registerModule(new EMFModule());
 		}
 		final ObjectNode resourceNode = documentFromURI(uri, objectMapper);
-		JsonNode id = resourceNode.get("_id");
+		//JsonNode id = resourceNode.get("_id");
 		//if (id != null && resource instanceof JsonResource && resource.getContents().size() == 1) {
 		//	((JsonResource) resource).setID(resource.getContents().get(0), id.textValue());
 		//}
