@@ -84,7 +84,7 @@ public class CouchHandler extends URIHandlerImpl {
 	}
 
 	private CouchClient getClient(URI uri) throws IOException {
-		final URI baseURI = uri.trimQuery().trimFragment().trimSegments(uri.segmentCount());
+		final URI baseURI = uri.trimFragment().trimQuery().trimSegments(uri.segmentCount());
 		final URL url = new URL(baseURI.toString());
 		if (mapper != null) {
 			return new CouchClient(url, mapper, user, password);
